@@ -34,8 +34,8 @@ class LP:
 
     def iter(self, X, # input labels
                    weights,
-                   labeled,
-                   num_iter):
+                   is_labeled,
+                   num_iter, multiclass=True):
         '''
         Iterated solution of label propagation.
         '''
@@ -45,31 +45,17 @@ class LP:
 
         for i in range(num_iter):
             # propagate labels
-            h = np.dot(h,Tnorm.T)
+            if multiclass:
+                h = np.dot(Tnorm,h)
+            else:
+                h = np.dot(h,Tnorm.T)
+
             # don't update labeled nodes
-            h = h * (1-labeled) + X * labeled
+            h = h * (1-is_labeled) + X * is_labeled
 
         # only return label predictions
         return h
 
-    def iter_multiclass(self,X, # input labels
-                              weights,
-                              labeled_indices,
-                              unlabeled_indices,
-                              num_iter=-1):
-        preds = []
-        num_classes = len(set(X))
-        for class_ in range(num_classes):
-            X_class = X.copy()
-            X_class[labeled_indices] = X_class[labeled_indices] == class_
-            X_class[unlabeled_indices] = np.array([1/num_classes] * len(unlabeled_indices))
-            if num_iter == -1:
-                pred = closed(X_class,weights,labeled_indices,unlabeled_indices)
-            else:
-                pred = iter(X_class,weights,labeled_indices,unlabeled_indices,iter_)
-            preds.append(pred)
-        res = np.vstack(preds).T
-        return res
 
     def _tnorm(self,weights):
         '''

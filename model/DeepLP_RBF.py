@@ -7,13 +7,17 @@ sys.path.append('../')
 from model.DeepLP import DeepLP
 
 class DeepLP_RBF(DeepLP):
-
-    def __init__(self, num_iter,
-                       num_nodes,
+    '''
+    Deep label propagation with scalor divisor as a parameter.
+    See our paper for details.
+    '''
+    def __init__(self, num_nodes,
                        features,
                        graph,
                        sigma,
-                       lr,
+                       num_iter=100,
+                       loss_type='mse',          # 'mse' or 'log'
+                       lr=0.1,
                        regularize=0,       # add L1 regularization to loss
                        graph_sparse=False, # make the graph sparse
                        print_freq=10,      # print frequency when training
@@ -26,6 +30,7 @@ class DeepLP_RBF(DeepLP):
 
         self._build_graph(num_iter,
                           num_nodes,
+                          loss_type,
                           lr,
                           regularize,
                           graph_sparse,
@@ -42,18 +47,12 @@ class DeepLP_RBF(DeepLP):
         r = tf.reduce_sum(phi*phi, 1)
         r = tf.reshape(r, [-1, 1])
         D = tf.cast(r - 2*tf.matmul(phi, tf.transpose(phi)) + tf.transpose(r),tf.float32)
-        W = tf.exp(-tf.divide(D, sigma ** 2)) * G
+        W = G * tf.exp(-tf.divide(D, sigma ** 2))
         return W
 
     def train(self,data,full_data,epochs):
         self.sigmas = []
         super().train(data,full_data,epochs)
-
-    # def labelprop(self,data,sigma):
-    #     self._open_sess()
-    #     self.weights = self._init_weights(self.phi,self.graph,sigma)
-    #     pred = self._eval(self.yhat,data)
-    #     return pred
 
     def _plot_params(self):
         plt.plot(self.sigmas)

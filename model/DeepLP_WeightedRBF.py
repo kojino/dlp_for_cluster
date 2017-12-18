@@ -7,14 +7,18 @@ sys.path.append('../')
 from model.DeepLP_RBF import DeepLP_RBF
 
 class DeepLP_WeightedRBF(DeepLP_RBF):
-
-    def __init__(self, num_iter,
-                       num_nodes,
+    '''
+    Deep label propagation with average weights as parameters.
+    See our paper for details.
+    '''
+    def __init__(self, num_nodes,
                        features,
                        graph,
                        sigma,
                        theta,
-                       lr,
+                       num_iter=100,
+                       loss_type='mse',          # 'mse' or 'log'
+                       lr=0.1,
                        regularize=0,       # add L1 regularization to loss
                        graph_sparse=False, # make the graph sparse
                        print_freq=10,      # print frequency when training
@@ -29,6 +33,7 @@ class DeepLP_WeightedRBF(DeepLP_RBF):
 
         self._build_graph(num_iter,
                           num_nodes,
+                          loss_type,
                           lr,
                           regularize,
                           graph_sparse,

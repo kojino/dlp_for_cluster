@@ -3,25 +3,32 @@ import numpy as np
 import scipy as sp
 from sklearn import datasets
 
-def random_unlabel(true_labels,unlabel_prob=0.1,hard=False):
+def random_unlabel(true_labels,unlabel_prob=0.1,hard=False,seed=None,multiclass=False):
     '''
     randomly unlabel nodes based on unlabel probability
     '''
+    np.random.seed(seed)
     labels = true_labels.copy().astype(float)
     n = len(labels)
     is_labeled = np.zeros(n)
     is_labeled.fill(True)
 
-    unlabeled_indices = np.arange(int(n * unlabel_prob))
-    # unlabeled_indices = np.array(sorted(np.random.choice(n, int(n * unlabel_prob), replace=False)))
+    # unlabeled_indices = np.arange(int(n * unlabel_prob))
+    unlabeled_indices = np.array(sorted(np.random.choice(n, int(n * unlabel_prob), replace=False)))
     labeled_indices = np.delete(np.arange(n),unlabeled_indices)
     is_labeled.ravel()[unlabeled_indices] = False
+
     if hard:
         print('hard initialization')
         labels[unlabeled_indices] = 1 - labels[unlabeled_indices]
     else:
         labels[unlabeled_indices] = 0.5
-    return labels, is_labeled, labeled_indices, unlabeled_indices
+
+    if multiclass:
+        k = labels.shape[1]
+        labels[unlabeled_indices] = 1/k
+
+    return labels, is_labeled.reshape(is_labeled.shape[0],1), labeled_indices, unlabeled_indices
 
 def rbf_kernel(X,s=1,G=[],percentile=3):
     '''
@@ -44,11 +51,12 @@ def rbf_kernel(X,s=1,G=[],percentile=3):
         Knew[np.arange(len(K)), argmax] = K[np.arange(len(K)), argmax]
         Knew[argmax,np.arange(len(K))] = K[np.arange(len(K)), argmax]
         K = Knew
+        G = K > 0
     else:
         print('graph given')
         K = K * G
 
-    return K
+    return K, G
 
 def parallel_coordinates(frame, class_column, cols=None, ax=None, color=None,
                      use_columns=False, xticks=None, colormap=None,
@@ -114,11 +122,23 @@ def parallel_coordinates(frame, class_column, cols=None, ax=None, color=None,
 
     return fig
 
-def accuracy(y,yhat):
-    return np.mean((yhat == y))
+def accuracy(y,yhat,multiclass=False):
+    if multiclass:
+        return np.mean((yhat == y).all(axis=1))
+    else:
+        return np.mean((yhat == y))
 
-def rmse(y,yhat):
-    return np.mean((yhat - y)**2)
+def log_loss(y,yhat):
+    if multiclass:
+        return
+    else:
+        return np.mean((y * np.log(yhat) + (1-y) * np.log(1-yhat)))
+
+def mse(y,yhat,multiclass=False):
+    if multiclass:
+        return np.mean((yhat[np.where(y==1)]-1)**2)
+    else:
+        return np.mean((yhat - y)**2)
 
 def objective(Ly,Uy_lp,W):
     n = len(Ly) + len(Uy_lp)
