@@ -61,6 +61,7 @@ class DeepLPT:
         self.true_losses = []
         self.true_accuracies = []
         self._save(-1,data,validation_data,n)
+        stopping_count = 0
         for epoch in range(epochs):
             # Train with each example
             self._eval(self.update,data)
@@ -70,11 +71,13 @@ class DeepLPT:
             if epoch > 2:
                 latest = self.labeled_losses[-1]
                 prev   = self.labeled_losses[-2]
-                if latest - prev < 0.001:
+                diff   = np.absolute(latest - prev)
+                if diff < 0.0001:
+                    print(diff)
                     stopping_count += 1
                 else:
                     stopping_count = 0
-                if stopping_count > 4:
+                if stopping_count > 29:
                     print("early stopping after",epoch,"epochs")
                     break
 
