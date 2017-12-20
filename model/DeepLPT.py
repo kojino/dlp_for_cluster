@@ -164,7 +164,7 @@ class DeepLPT:
     def _calc_loss(self,y,yhat,mask, eps=0.00001):
         if self.loss_type == 'mse':
             loss_mat = mask * ((y - yhat) ** 2)
-            loss = tf.reduce_sum(loss_mat) / tf.count_nonzero(mask,dtype=tf.float32)
+            loss = (tf.reduce_sum(loss_mat) / tf.count_nonzero(mask,dtype=tf.float32)) * self.num_classes
         if self.loss_type == 'log':
             yhat = tf.minimum(tf.maximum(yhat, eps), 1-eps)
             loss_mat = mask * y * tf.log(yhat) * (-1)

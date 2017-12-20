@@ -137,8 +137,8 @@ def log_loss(y,yhat,multiclass=False,eps=0.0000000001):
     else:
         return np.mean((y * np.log(yhat) + (1-y) * np.log(1-yhat)))
 
-def mse(y,yhat):
-    return np.mean((yhat - y)**2)
+def mse(y,yhat,num_classes):
+    return np.mean((yhat - y)**2) * num_classes
 
 def objective(Ly,Uy_lp,W):
     n = len(Ly) + len(Uy_lp)
