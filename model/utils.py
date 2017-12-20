@@ -128,17 +128,17 @@ def accuracy(y,yhat,multiclass=False):
     else:
         return np.mean((yhat == y))
 
-def log_loss(y,yhat):
+def log_loss(y,yhat,multiclass=False,eps=0.0000000001):
+    yhat[yhat < eps] = eps
+    yhat[yhat > 1-eps] = 1-eps
+    log_yhat = np.log(yhat)
     if multiclass:
-        return
+        return np.sum((y * log_yhat)/np.count_nonzero(y)) * (-1)
     else:
         return np.mean((y * np.log(yhat) + (1-y) * np.log(1-yhat)))
 
-def mse(y,yhat,multiclass=False):
-    if multiclass:
-        return np.mean((yhat[np.where(y==1)]-1)**2)
-    else:
-        return np.mean((yhat - y)**2)
+def mse(y,yhat):
+    return np.mean((yhat - y)**2)
 
 def objective(Ly,Uy_lp,W):
     n = len(Ly) + len(Uy_lp)

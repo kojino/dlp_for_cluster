@@ -38,33 +38,33 @@ class Data:
 
         return true_labels, features, graph
 
-    def prepare(labels,labeled_indices,true_labels,k,num_samples):
+    def prepare(labels,labeled_indices,true_labels,k,num_classes,num_samples,num_nodes):
         num_nodes = len(labels)
-        X_ = np.tile(labels,(num_samples,1))
-        y_ = true_labels.reshape((1,len(true_labels)))
-        true_labeled_ = indices_to_vec(labeled_indices,num_nodes).reshape((1,len(true_labels)))
-        labeled_ = np.tile(true_labeled_,(num_samples,1))
-        masked_  = np.zeros((num_samples,num_nodes))
+        X_ = np.tile(labels.T,num_samples).reshape(num_classes,num_samples,num_nodes)
+        y_ = np.tile(true_labels.T,1).reshape(num_classes,1,num_nodes)
+        true_labeled_ = np.repeat(indices_to_vec(labeled_indices,num_nodes).reshape(1,num_nodes),num_classes,axis=0).reshape((num_classes,1,len(true_labels)))
+        labeled_ = np.repeat(true_labeled_,num_samples,axis=1)
+        masked_ = np.zeros((num_classes,num_samples,num_nodes))
 
         validation_data = {
-            'X': labels.reshape(1,num_nodes),
+            'X': labels.T.reshape(num_classes,1,num_nodes),
             'y': y_,
             'labeled': true_labeled_,
-            'true_labeled': true_labeled_.reshape(1,num_nodes), # this will not be used
+            'true_labeled': true_labeled_, # this will not be used
             'masked': masked_  # this will not be used
         }
 
         for i in range(num_samples):
             indices_to_mask = np.random.choice(labeled_indices, k)
-            X_[i,indices_to_mask] = 0.5
-            labeled_[i,indices_to_mask] = 0
-            masked_[i,indices_to_mask] = 1
+            X_[:,i,indices_to_mask] = 1/num_classes
+            labeled_[:,i,indices_to_mask] = 0
+            masked_[:,i,indices_to_mask] = 1
 
         data = {
             'X': X_,
             'y': y_,
             'labeled': labeled_,
-            'true_labeled': true_labeled_.reshape(1,num_nodes),
+            'true_labeled': true_labeled_,
             'masked': masked_
         }
 
