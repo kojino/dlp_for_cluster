@@ -37,6 +37,26 @@ class DataT:
 
         return true_labels, features, graph
 
+    def load_mnist(rel_path=''):
+        from tensorflow.examples.tutorials.mnist import input_data
+        mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+        train_images = mnist.train.images
+        train_labels = mnist.train.labels
+        test_images = mnist.test.images
+        test_labels = mnist.test.labels
+        true_labels = np.vstack([train_labels, test_labels])
+        features = np.vstack([train_images,test_images])
+        labeled_indices = np.arange(train_images.shape[0])
+        unlabeled_indices = np.arange(test_images.shape[0]) + train_images.shape[0]
+        labels = true_labels.copy()
+        k = labels.shape[1]
+        labels[unlabeled_indices] = 1/k
+        n = len(labels)
+        is_labeled = np.zeros(n)
+        is_labeled.fill(True)
+        is_labeled.ravel()[unlabeled_indices] = False
+        return true_labels, features, labels, is_labeled.reshape(-1,1), labeled_indices, unlabeled_indices
+
     def prepare(labels,labeled_indices,true_labels,k,num_classes,num_samples,num_nodes):
         num_nodes = len(labels)
         X_ = np.tile(labels.T,num_samples).reshape(num_classes,num_samples,num_nodes)

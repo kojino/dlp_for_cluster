@@ -30,28 +30,36 @@ def random_unlabel(true_labels,unlabel_prob=0.1,hard=False,seed=None,multiclass=
 
     return labels, is_labeled.reshape(is_labeled.shape[0],1), labeled_indices, unlabeled_indices
 
-def rbf_kernel(X,s=1,G=[],percentile=3):
+def rbf_kernel(X,s=1,G=[],percentile=None,k=None):
     '''
     Use RBF kernel to calculate the weights of edges.
     If given a graph G, drop edges not in G.
     If not, drop edges that are not in the top percentile.
     '''
     # use rbf kernel to estimate weights
-    pairwise_dists = squareform(pdist(X, 'euclidean'))
-    K = sp.exp(-pairwise_dists ** 2 / s ** 2)
+    from sklearn.metrics.pairwise import rbf_kernel
+    K = rbf_kernel(X, gamma=1/s**2)
     # K = features @ features.T/
 
     if G == []:
-        print('graph constructed')
-        threshold = np.percentile(K,percentile)
         np.fill_diagonal(K, 0)
-
-        Knew = K * (K > threshold)
-        argmax = np.argmax(K,axis=1)
-        Knew[np.arange(len(K)), argmax] = K[np.arange(len(K)), argmax]
-        Knew[argmax,np.arange(len(K))] = K[np.arange(len(K)), argmax]
-        K = Knew
-        G = K > 0
+        if k:
+            sortK = K.argsort()
+            knn = sortK[:,-k:]
+            G1 = np.zeros(K.shape)
+            G1[np.arange(K.shape[0]).reshape(-1,1),knn] = 1
+            G2 = G1.T
+            G = np.logical_or(G1,G2)
+            K[~G] = 0
+        if percentile:
+            print('graph constructed')
+            threshold = np.percentile(K,percentile)
+            Knew = K * (K > threshold)
+            argmax = np.argmax(K,axis=1)
+            Knew[np.arange(len(K)), argmax] = K[np.arange(len(K)), argmax]
+            Knew[argmax,np.arange(len(K))] = K[np.arange(len(K)), argmax]
+            K = Knew
+            G = K > 0
     else:
         print('graph given')
         K = K * G
